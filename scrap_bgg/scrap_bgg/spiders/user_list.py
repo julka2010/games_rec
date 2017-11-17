@@ -18,8 +18,31 @@ class BGG_UserList(CrawlSpider):
         ),
     )
 
+    def start_requests(self):
+        for url in self.start_urls:
+            yield scrapy.Request(url=url, callback=self.parse)
+
     def parse_users_page(self, response):
-        username_xpath = './/a[contains(@href, "/user/")]/text()'
+        user_page_xpath = './/a[contains(@href, "/user/")]/@href'
+        ratings_query = '?rated=1'
+        users = response.xpath(user_page_xpath).extract()
+        for user in users:
+            yield response.follow(
+                'https://www.boardgamegeek.com/collection' + user + ratings_query,
+                callback=self.parse_users_ratings,
+            )
+
+    def parse_users_ratings(self, response):
+        game_row_xpath = '//table[contains(@class, "collection_table")]/tr'
+        game_url_xpath = './/a[contains(@href, "boardgame")]/@href'
+        user_rating_xpath = './/div[contains(@class, "ratingtext")]/text()'
+
+        sel = scrapy.Selector(response)
+        games = sel.xpath(game_row_xpath)
         item = {}
-        item['username'] = response.xpath(username_xpath).extract_first()
-        return item
+        username = response.request.url.split('/')[-1].split('?')[0]
+        for game in games[1:]:  #Ignore header row
+            url = game.xpath(game_url_xpath)
+            rating = game.xpath(user_rating_xpath)
+            game_id = url.extract_first().split('/')[2]
+            yield {'username': username, 'game_id': game_id, 'rating': rating.extract_first()}
