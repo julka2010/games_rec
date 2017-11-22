@@ -1,0 +1,55 @@
+import numpy as np
+import tensorflow as tf
+from tensorflow.python import debug as tf_debug
+
+#import utils
+
+num_users = 1000
+num_items = 1001
+num_item_features = 10
+
+iterations = 5000
+
+def weight_variable(shape):
+  initial = tf.truncated_normal(shape, stddev=0.1)
+  return tf.Variable(initial)
+
+def bias_variable(shape):
+  initial = tf.constant(0.1, shape=shape)
+  return tf.Variable(initial)
+
+#Arbitrary number of users give arbitrary number of (item, rating) pairs
+#Sparse matrix assumed
+ratings = tf.placeholder(tf.float32, shape=[None, None])
+mask = tf.placeholder(tf.bool, shape=[None, None])
+
+#User preferences for features
+W = tf.Variable(tf.truncated_normal(
+    [num_users, num_item_features], stddev=0.2, mean=0), name='Users')
+w_ones = tf.ones((num_users, 1))
+W_biased = tf.concat([W, w_ones], 1)
+
+#Items features
+H = tf.Variable(tf.truncated_normal(
+    [num_item_features, num_items], stddev=0.2, mean=0), name='Items')
+b_h = tf.ones([1, num_items])
+H_biased = tf.concat([H, b_h], 0)
+
+result = tf.matmul(W_biased, H_biased, name='Hypothesis')  #Our hypothesis
+
+squared_diff = tf.squared_difference(result, ratings)
+squared_error = tf.reduce_sum(tf.boolean_mask(squared_diff, mask))
+train_step = tf.train.AdamOptimizer(1e-2).minimize(squared_error)
+
+init = tf.global_variables_initializer()
+
+def main(r, m, wanted_pred=False):
+    with tf.Session() as sess:
+        sess.run(init)
+        for i in range(iterations):
+            train_step.run(feed_dict={ratings: r, mask: m})
+            if i % 100 == 0:
+                print("Iter %d, entropy %g" % (i, squared_error.eval(feed_dict={ratings: r, mask: m})))
+        if wanted_pred:
+            return result.eval(feed_dict={ratings: r, mask: m})
+        return H_biased.eval()
