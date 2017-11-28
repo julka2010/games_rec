@@ -103,3 +103,6 @@ ENV/
 # tensorflow
 model.*
 checkpoint
+
+# scrapped data
+scrap_bgg/**/*.csv
