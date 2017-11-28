@@ -10,7 +10,7 @@ def read_user_list_file(file_):
         reader = csv.reader(csvfile, dialect='unix')
         for row in reader:
             ratings.append(row)
-    return ratings[1:]  #Assume header row
+    return ratings
 
 def group_ratings_by_key(ratings, key):
     ratings_grouped = {}
@@ -49,16 +49,15 @@ def _setup_for_interactive(userfile):
     temp_ratings = []  #ignore any rows without rating
     for r in ratings:
         if len(r[2]) > 0:
-            temp_ratings.append(r)
+            temp_ratings.append([int(float(r[0])), r[1], float(r[2])])
     ratings = temp_ratings
     del temp_ratings
-    ratings = [[r[0], int(float(r[1])), float(r[2])] for r in ratings]
-    ratings_by_game, table_games, list_games = _set_of_variables(1)
-    ratings_by_user, table_users, list_users = _set_of_variables(0)
+    ratings_by_game, table_games, list_games = _set_of_variables(0)
+    ratings_by_user, table_users, list_users = _set_of_variables(1)
     ratings_indexed = [
-        [table_users[t[0]], table_games[t[1]], t[2]] for t in ratings]
+        [table_games[t[0]], table_users[t[1]], t[2]] for t in ratings]
     indices, values = ratings_indices(ratings_indexed)
-    shape = np.array([len(list_users), len(list_games)])
+    shape = np.array([len(list_games), len(list_users)])
     global_mean = np.mean(values)
     means_game = calculate_mean_ratings(ratings_by_game)
     means_user = calculate_mean_ratings(ratings_by_user)
