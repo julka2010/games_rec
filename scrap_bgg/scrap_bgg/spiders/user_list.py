@@ -5,6 +5,12 @@ from scrapy.spiders import (
 )
 from scrapy.linkextractors import LinkExtractor
 
+#Idea for next scrapping
+#Url https://www.boardgamegeek.com/api/collections?ajax=1&objectid=<game_id>&objecttype=thing&oneperuser=1&pageid=1&rated=1&require_review=true&showcount=50&sort=review_tstamp
+#ratings = json.loads(response)
+#ratings['items'][<rating_id>]['rating']
+#ratings['items'][<rating_id>]['user']['username']
+
 class BGG_UserList(CrawlSpider):
     name = 'bgg_userlist'
     allowed_domains = ['www.boardgamegeek.com']
