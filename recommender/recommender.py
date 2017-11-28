@@ -3,10 +3,10 @@ from tensorflow.python import debug as tf_debug
 
 num_users = 60184
 num_items = 45776
-num_item_features = 10
+num_item_features = 20
 reg_param_lambda = 10
 
-iterations = 4000
+iterations = 1000
 
 #Max difference between predicted rating and true rating
 #for prediction to be considered "correct"
@@ -32,8 +32,6 @@ H = tf.Variable(tf.truncated_normal(
 b_ones = tf.ones([num_items, 1])
 H_biased = tf.concat([H, item_b, b_ones], 1)
 
-ratings = tf.sparse_reorder(ratings)
-
 #Our hypothesis
 pred = tf.matmul(H_biased, W_biased, name='Hypothesis') + global_mean
 pred_values = tf.gather_nd(pred, ratings.indices)
@@ -49,13 +47,13 @@ training_cost = squared_error + regularization_term
 correct_pred = tf.less(squared_diff, correct_rating_diff ** 2)
 accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
 
-train_step = tf.train.AdamOptimizer(1e-2).minimize(training_cost)
+train_step = tf.train.AdamOptimizer(1e-1).minimize(training_cost)
 
-save_item_features = tf.train.Saver({"item_features": H_biased})
+saver = tf.train.Saver()
 
 init = tf.global_variables_initializer()
 
-def main(r, user_bias, item_bias, mean_rating=0):
+def main(r, user_bias, item_bias, mean_rating=0, save=False):
     training_feed_dict = {
         ratings: r,
         user_b: user_bias,
@@ -73,6 +71,7 @@ def main(r, user_bias, item_bias, mean_rating=0):
             if i % 1000 == 0:
                 print("Iter %d, validation accuracy %g" %
                     (i, accuracy.eval(validation_feed_dict)))
+        if save:
+            saver.save(sess, "/home/julka/LP/games_rec/model.ckpt")
         print("Training accuracy %g" % accuracy.eval(training_feed_dict))
         print("Validation accuracy %g" % accuracy.eval(validation_feed_dict))
-        return pred.eval(training_feed_dict)
