@@ -30,11 +30,12 @@ class BGG_UserList(CrawlSpider):
 
     def parse_users_page(self, response):
         user_page_xpath = './/a[contains(@href, "/user/")]/@href'
+        collection_url = 'https://www.boardgamegeek.com/collection'
         ratings_query = '?rated=1'
         users = response.xpath(user_page_xpath).extract()
         for user in users:
             yield response.follow(
-                'https://www.boardgamegeek.com/collection' + user + ratings_query,
+                collection_url + user + ratings_query,
                 callback=self.parse_users_ratings,
             )
 
@@ -51,4 +52,8 @@ class BGG_UserList(CrawlSpider):
             url = game.xpath(game_url_xpath)
             rating = game.xpath(user_rating_xpath)
             game_id = url.extract_first().split('/')[2]
-            yield {'username': username, 'game_id': game_id, 'rating': rating.extract_first()}
+            yield {
+                'username': username,
+                'game_id': game_id,
+                'rating': rating.extract_first(),
+            }
