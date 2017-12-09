@@ -49,6 +49,7 @@ def main(user, item_bias, mean_rating, user_val=None):
         item_b: item_bias,
         global_mean: mean_rating,
     }
+    #IDEA
     #For a recommender system predicting scores too high is much worse than
     #predicting scores too low
     #Usually, only top X predictions will be looked at and there the guesses
