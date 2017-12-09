@@ -49,6 +49,11 @@ def main(user, item_bias, mean_rating, user_val=None):
         item_b: item_bias,
         global_mean: mean_rating,
     }
+    #For a recommender system predicting scores too high is much worse than
+    #predicting scores too low
+    #Usually, only top X predictions will be looked at and there the guesses
+    #are most surely overoptimistic as any game that got lesser score than the
+    #user would give didn't make it to the top suggestions
 
     with tf.Session() as sess:
         sess.run(init)
