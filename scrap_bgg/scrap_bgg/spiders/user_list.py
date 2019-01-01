@@ -1,3 +1,4 @@
+from datetime import datetime
 import scrapy
 from scrapy.spiders import (
     CrawlSpider,
@@ -38,6 +39,11 @@ class BGG_UserList(CrawlSpider):
                 collection_url + user + ratings_query,
                 callback=self.parse_users_ratings,
             )
+            yield {
+                'user': user,
+                'url': collection_url + user + ratings_query,
+                'last_accessed': datetime.now(),
+            }
 
     def parse_users_ratings(self, response):
         game_row_xpath = '//table[contains(@class, "collection_table")]/tr'

@@ -104,5 +104,13 @@ ENV/
 model.*
 checkpoint
 
-# scrapped data
+# scraping data
 scrap_bgg/**/*.csv
+scrap_bgg/**/*.json
+scrap_bgg/crawls/
+
+# env variables setuo
+.env
+
+# docker volumes
+docker/psql/data.vlm
