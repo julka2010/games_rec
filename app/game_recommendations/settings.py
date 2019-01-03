@@ -41,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     # local apps
-    'ratings'
+    'ratings',
+    'training',
 ]
 
 MIDDLEWARE = [
