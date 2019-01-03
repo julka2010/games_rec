@@ -1,0 +1,20 @@
+# git
+.git/**/*
+.gitignore
+
+# tensorflow
+model.*
+checkpoint
+
+# scraping data
+scrap_bgg/**/*.csv
+scrap_bgg/**/*.json
+scrap_bgg/crawls/**/*
+
+# environment setup
+env/*
+.env
+.envrc
+
+# docker volumes
+docker/**/*

@@ -79,9 +79,6 @@ celerybeat-schedule
 # SageMath parsed files
 *.sage.py
 
-# dotenv
-.env
-
 # virtualenv
 .venv
 venv/
@@ -109,8 +106,8 @@ scrap_bgg/**/*.csv
 scrap_bgg/**/*.json
 scrap_bgg/crawls/
 
-# env variables setuo
-.env
+# env variables setup
+*.env
 
 # docker volumes
 docker/psql/data.vlm

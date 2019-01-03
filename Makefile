@@ -6,6 +6,7 @@ venv-name = "env"
 #
 # ==================== END CONSTANTS SECTION ======================= #
 
+
 # ====================================================================
 # Create/upgrade python3 virtual environment.
 # ====================================================================
@@ -32,11 +33,18 @@ init-db:
 	)
 
 # ====================================================================
+# Run arbitrary docker-compose commands.
+# ====================================================================
+docker-compose:
+	docker-compose -f $(compose_spec) --project-directory $(pwd) $(ARGS)
+
+
+# ====================================================================
 # Create docker-compose images from dockerfiles and spec provided in
 # this Makefile.
 # ====================================================================
-dc-build:
-	docker-compose -f $(compose_spec) build
+dc-build: ARGS=build
+dc-build: docker-compose
 
 # ====================================================================
 # Run docker-compose using env and spec provided in this Makefile
@@ -44,14 +52,14 @@ dc-build:
 up:
 	(\
 		source $(dotenv) && \
-	 	docker-compose -f $(compose_spec) up \
+	 	docker-compose -f $(compose_spec) --project-directory $(CURDIR) up \
 	)
 
 # ====================================================================
 # Bring docker-compose down (for cases when you use -d flag)
 # ====================================================================
-down:
-	docker-compose -f $(compose_spec) down
+down: ARGS=down
+down: docker-compose
 
 # ====================================================================
 # Install UI dependencies

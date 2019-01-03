@@ -3,13 +3,10 @@ version: '3'
 services:
   psql:
     image: "postgres:11-alpine"
-          #    build:
-          #      context: '..'
-          #      dockerfile: './docker/psql/Dockerfile'
     restart: always
     volumes:
-      - './psql/data.vlm:/var/lib/postgresql/data'
-      - './psql/scripts/init-db.sh:/init-db.sh'
+      - './docker/psql/data.vlm:/var/lib/postgresql/data'
+      - './docker/psql/scripts/init-db.sh:/init-db.sh'
     environment:
       - POSTGRES_DB=${PSQL_DB_NAME}
       - POSTGRES_USER=${PSQL_DB_USER}
@@ -20,7 +17,9 @@ services:
   app:
     build:
       dockerfile: './docker/app/Dockerfile'
-      context: '..'
+      context: '.'
+    env_file:
+      - app.env
     ports:
       - ${EXPOSE_APP}:8000
     depends_on:
