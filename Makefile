@@ -36,7 +36,7 @@ init-db:
 # Run arbitrary docker-compose commands.
 # ====================================================================
 docker-compose:
-	docker-compose -f $(compose_spec) --project-directory $(pwd) $(ARGS)
+	docker-compose -f $(compose_spec) --project-directory $(CURDIR) $(ARGS)
 
 
 # ====================================================================
@@ -49,17 +49,20 @@ dc-build: docker-compose
 # ====================================================================
 # Run docker-compose using env and spec provided in this Makefile
 # ====================================================================
-up:
-	(\
-		source $(dotenv) && \
-	 	docker-compose -f $(compose_spec) --project-directory $(CURDIR) up \
-	)
+up: ARGS=up
+up: docker-compose
 
 # ====================================================================
 # Bring docker-compose down (for cases when you use -d flag)
 # ====================================================================
 down: ARGS=down
 down: docker-compose
+
+# =====================================================================
+# Get bash session to selected container
+# =====================================================================
+connect: ARGS=exec $(CONTAINER) bash
+connect: docker-compose
 
 # ====================================================================
 # Install UI dependencies

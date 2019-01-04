@@ -1,6 +1,7 @@
 celery
 dj-database-url
 Django
+django-celery-results
 gunicorn
 html5lib
 Keras

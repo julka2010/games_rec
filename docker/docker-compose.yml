@@ -1,9 +1,39 @@
 version: '3'
 
 services:
+  app:
+    build:
+      dockerfile: './docker/app/Dockerfile'
+      context: '.'
+    command: ["start-gunicorn.sh"]
+    image: &app app
+    env_file:
+      - .env
+    networks:
+      - celery-net
+      - database-net
+    ports:
+      - ${EXPOSE_APP}:8000
+    depends_on:
+      - celery
+      - psql
+
+  celery:
+    image: *app
+    command: ["celery", "worker", "--app=game_recommendations", "--loglevel=INFO"]
+    env_file:
+      - .env
+    depends_on:
+      - celery-broker
+    networks:
+      - celery-net
+      - database-net
+
   psql:
     image: "postgres:11-alpine"
     restart: always
+    networks:
+      - database-net
     volumes:
       - './docker/psql/data.vlm:/var/lib/postgresql/data'
       - './docker/psql/scripts/init-db.sh:/init-db.sh'
@@ -14,21 +44,16 @@ services:
     ports:
       - ${EXPOSE_DB}:5432
 
-  app:
-    build:
-      dockerfile: './docker/app/Dockerfile'
-      context: '.'
-    env_file:
-      - app.env
-    ports:
-      - ${EXPOSE_APP}:8000
-    depends_on:
-      - psql
-
-  redis:
-    image: "redis:5-alpine"
+  celery-broker:
+    image: "rabbitmq:3.7-alpine"
     restart: always
+    volumes:
+      - './docker/celery-broker/data.vlm/var/lib/rabbitmq'
+    networks:
+      - celery-net
     ports:
-      - ${EXPOSE_REDIS}:6739
-    depends_on:
-      - app
+      - ${EXPOSE_RABBITMQ}:5672
+
+networks:
+  celery-net:
+  database-net:

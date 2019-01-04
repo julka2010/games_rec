@@ -40,6 +40,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # third-party-apps
+    'django_celery_results',
+
     # local apps
     'ratings',
     'training',
@@ -80,14 +83,14 @@ WSGI_APPLICATION = 'game_recommendations.wsgi.application'
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgres://{user}:{password}@localhost:{port}/{name}'.format(
-            user=os.environ.get('GAMES_REC_DB_USER'),
-            password=os.environ.get('GAMES_REC_DB_PASS'),
-            port=os.environ.get('EXPOSE_DB'),
-            name=os.environ.get('GAMES_REC_DB_NAME'),
-        )
-    )
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('GAMES_REC_DB_NAME'),
+            'USER': os.environ.get('GAMES_REC_DB_USER'),
+            'PASSWORD': os.environ.get('GAMES_REC_DB_PASS'),
+            'HOST': os.environ.get('DB_HOST'),
+            'PORT': os.environ.get('EXPOSE_DB'),
+        }
 }
 
 
@@ -130,4 +133,8 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # Celery settings
-CELERY_BROKER_URL = 'redis://localhost'
+CELERY_BROKER_URL = os.environ['CELERY_BROKER']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_RESULT_BACKEND = 'django-db'

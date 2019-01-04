@@ -19,7 +19,4 @@ RUN pip install -r /app/requirements.txt
 COPY ./misc/start-gunicorn.sh /usr/local/bin/
 COPY ./app /app
 
-RUN echo $EXPOSE_APP
-
 EXPOSE 8000
-ENTRYPOINT ["start-gunicorn.sh"]
