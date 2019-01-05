@@ -12,6 +12,8 @@ services:
     networks:
       - celery-net
       - database-net
+    volumes:
+      - './docker/app/data/keras_models:/var/lib/keras_models'
     ports:
       - ${EXPOSE_APP}:8000
     depends_on:
