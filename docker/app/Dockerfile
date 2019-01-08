@@ -13,10 +13,10 @@ FROM tensorflow/tensorflow:latest-gpu-py3
 #    wget
 
 WORKDIR /app
+EXPOSE 8000
+
 COPY ./misc/requirements.txt /app/
 RUN pip install -r /app/requirements.txt
 
 COPY ./misc/start-gunicorn.sh /usr/local/bin/
 COPY ./app /app
-
-EXPOSE 8000

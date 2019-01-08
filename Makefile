@@ -64,6 +64,12 @@ down: docker-compose
 connect: ARGS=exec $(CONTAINER) bash
 connect: docker-compose
 
+# ==============================================================================
+# Get to django shell of app container
+# ==============================================================================
+shell: ARGS=exec app python ./manage.py shell
+shell: docker-compose
+
 # ====================================================================
 # Install UI dependencies
 # ====================================================================

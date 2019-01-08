@@ -110,4 +110,5 @@ scrap_bgg/crawls/
 *.env
 
 # docker volumes
-docker/psql/data.vlm
+docker/*/data.vlm
+docker/*/data

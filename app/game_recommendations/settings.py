@@ -92,6 +92,7 @@ DATABASES = {
             'PORT': os.environ.get('EXPOSE_DB'),
         }
 }
+CONN_MAX_AGE = 60
 
 
 # Password validation

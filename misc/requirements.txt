@@ -14,3 +14,4 @@ redis
 Scrapy
 tensorflow
 tensorflow-gpu
+pylint
