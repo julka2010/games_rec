@@ -1,4 +1,4 @@
-version: '3'
+version: '2.4'
 
 services:
   app:
@@ -9,6 +9,7 @@ services:
     image: &app app
     env_file:
       - .env
+    runtime: nvidia
     networks:
       - celery-net
       - database-net
@@ -19,10 +20,6 @@ services:
     depends_on:
       - celery
       - psql
-    deploy:
-      resources:
-        limits:
-          cpus: ${COMPUTING_AVAILABLE}
 
   celery:
     image: *app
