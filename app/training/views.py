@@ -1,6 +1,5 @@
-from celery.decorators import task
-from django.http import HttpResponse
-from django.shortcuts import render
+from django.http import Http404, HttpResponse
+from django.shortcuts import get_object_or_404, render
 
 from ratings.models import Player
 from training.tasks import (
@@ -12,7 +11,6 @@ def everything(request):
     train_everything.delay()
     return HttpResponse('Training has started')
 
-def player(request, username):
-    player = Player.objects.get(bgg_username=username)
-    train_player.delay(player)
+def player(request, player_id):
+    train_player.delay(player_id)
     return HttpResponse('Training has started')

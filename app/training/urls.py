@@ -1,9 +1,9 @@
-from django.urls import include, path
+from django.urls import path
 
 from . import views
 
+app_name = 'training'
 urlpatterns = [
-    # TODO admin protect this (or functionaly same) url
     path('everything', views.everything, name='everything'),
-    path('/player/<username>/', views.player, name='train_for_player'),
+    path('player/<int:player_id>', views.player, name='player'),
 ]

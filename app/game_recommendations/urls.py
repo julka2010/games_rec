@@ -16,8 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
-urlpatterns = [
+urlpatterns = [  #pylint:disable=invalid-name
     path('admin/', admin.site.urls),
     path('ratings/', include('ratings.urls')),
+    path('recommendations/',
+         include('recommendations.urls')),
     path('training/', include('training.urls')),
 ]

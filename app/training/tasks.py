@@ -4,6 +4,7 @@ from celery import shared_task
 import pandas as pd
 import numpy as np
 
+from ratings.models import Player
 import training.keras.models
 from training.keras import (
     data_preparation,
@@ -24,7 +25,7 @@ def train_everything(rebuild_indices=True):
         NUM_ITEM_FEATURES,
     )
     model.compile()
-    history = model.fit(
+    _history = model.fit(
         {
             'user_in': ratings.player_id.values,
             'item_in': ratings.game_id.values,
@@ -32,22 +33,21 @@ def train_everything(rebuild_indices=True):
         [ratings.value.values, ratings.value.values],
         verbose=1,
     )
-    return history, model
 
 
 @shared_task
-def train_player(player):
+def train_player(player_id):
+    player = Player.objects.get(pk=player_id)
     qs = player.rating_set.all()
     ratings = pd.DataFrame.from_records(qs.values())
     ratings = data_preparation.to_keras_model_indices(ratings)
     np.random.shuffle(ratings.values)
     model = training.keras.models.SingleUserModel()
-    history = model.fit(
+    _history = model.fit(
         {
             'user_in': ratings.player_id.values,
             'item_in': ratings.game_id.values
         },
         [ratings.value.values, ratings.value.values],
-        verbose=1
+        verbose=2
     )
-    return history, model
