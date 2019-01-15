@@ -26,6 +26,9 @@ services:
     command: ["celery", "worker", "--app=game_recommendations", "--loglevel=INFO"]
     env_file:
       - .env
+    runtime: nvidia
+    volumes:
+      - './docker/app/data/keras_models:/var/lib/keras_models'
     depends_on:
       - celery-broker
     networks:
