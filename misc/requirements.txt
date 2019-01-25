@@ -3,15 +3,14 @@ dj-database-url
 Django
 django-celery-results
 gunicorn
-html5lib
+ijson
 Keras
 Markdown
 numpy
 pandas
 psycopg2
 PyYAML
-redis
 Scrapy
-tensorflow
 tensorflow-gpu
 pylint
+pylint-django
