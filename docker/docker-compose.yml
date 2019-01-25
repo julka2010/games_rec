@@ -15,6 +15,7 @@ services:
       - database-net
     volumes:
       - './docker/app/data/keras_models:/var/lib/keras_models'
+      - './app:/app'
     ports:
       - ${EXPOSE_APP}:8000
     depends_on:
@@ -27,13 +28,14 @@ services:
     env_file:
       - .env
     runtime: nvidia
-    volumes:
-      - './docker/app/data/keras_models:/var/lib/keras_models'
-    depends_on:
-      - celery-broker
     networks:
       - celery-net
       - database-net
+    volumes:
+      - './docker/app/data/keras_models:/var/lib/keras_models'
+      - './app:/app'
+    depends_on:
+      - celery-broker
 
   psql:
     image: "postgres:11-alpine"
