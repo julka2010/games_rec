@@ -13,6 +13,7 @@ FROM tensorflow/tensorflow:latest-gpu-py3
 #    wget
 
 WORKDIR /app
+ENV LANG=C.UTF-8
 EXPOSE 8000
 
 COPY ./misc/requirements.txt /app/
