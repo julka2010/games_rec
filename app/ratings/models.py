@@ -9,7 +9,10 @@ class Player(models.Model):
 
 
 class Game(models.Model):
-    bgg_id = models.IntegerField(default=None, blank=True, null=True)
+    bgg_id = models.IntegerField(
+        default=None, blank=True, null=True,
+        unique=True,
+    )
     title = models.CharField(max_length=255)
     min_players = models.IntegerField(default=None, blank=True, null=True)
     max_players = models.IntegerField(default=None, blank=True, null=True)
