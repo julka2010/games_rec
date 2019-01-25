@@ -25,7 +25,7 @@ venv-init:
 init-db:
 	(\
 		source $(dotenv) && \
-		docker-compose -f $(compose_spec) exec \
+		docker-compose -f $(compose_spec) --project-directory $(CURDIR) exec \
 			-e GAMES_REC_DB_NAME=$${GAMES_REC_DB_NAME} \
 			-e GAMES_REC_DB_USER=$${GAMES_REC_DB_USER} \
 			-e GAMES_REC_DB_PASS=$${GAMES_REC_DB_PASS} \
