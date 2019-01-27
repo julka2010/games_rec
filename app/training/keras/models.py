@@ -1,14 +1,18 @@
+import os
+import tempfile
+
+from django.core.files import File
 import keras.backend as K
 from keras import(
     optimizers,
 )
 from keras.callbacks import (
+    Callback,
     EarlyStopping,
     ModelCheckpoint,
     TerminateOnNaN,
 )
 from keras.layers import (
-    Activation,
     add,
     concatenate,
     Dense,
@@ -22,8 +26,9 @@ from keras.models import (
     load_model,
     Model,
 )
-from keras.regularizers import l1, l2
+from keras.regularizers import l2
 
+from training.models import KerasSinglePlayerModel
 from training.keras.utils.constants import (
     BATCH_SIZE,
     KERAS_MODELS_FORMATTING,
@@ -31,6 +36,39 @@ from training.keras.utils.constants import (
     USER_REGULARIZATION_CONSTANT,
     PATH_TO_BEST_COLLABORATIVE_FILTERING_MODEL,
 )
+
+
+class SaveBestToDatabase(Callback):
+    """Saves model to filesystem and saves info about it in db."""
+    def __init__(self, *args, player_id=None, **kwds):
+        self.player_id = player_id
+        self.best_val_loss = None
+        super().__init__(*args, **kwds)
+
+    def on_epoch_end(self, epoch, logs):
+        if (
+                self.best_val_loss is None or
+                self.best_val_loss > logs.get('val_loss')
+        ):
+            self.best_val_loss = logs.get('val_loss')
+            db_model = KerasSinglePlayerModel(
+                epoch=int(epoch),
+                loss=logs.get('loss'),
+                output_mean_absolute_error=logs.get(
+                    'output_mean_absolute_error'),
+                player_id=self.player_id,
+                val_loss=int(logs.get('val_loss')),
+                val_output_mean_absolute_error=logs.get(
+                    'val_output_mean_absolute_error'),
+            )
+            filename = str(abs(hash(self.model))) + '.hdf5'
+            temp_file_path = os.path.join(tempfile.gettempdir(), filename)
+            self.model.save(temp_file_path)
+            db_model.keras_model.save(
+                filename,
+                File(open(temp_file_path, 'rb')),
+            )
+            db_model.save()
 
 
 def _create_embedding_bias(num_things, thing_in, name):
@@ -48,7 +86,11 @@ def _create_starting_layers(num_things, num_features, thing_name, regularizer):
         embeddings_regularizer=regularizer,
         name='{}_factors'.format(thing_name),
     )(in_layer)
-    bias = _create_embedding_bias(num_things, in_layer, '{}_bias'.format(thing_name))
+    bias = _create_embedding_bias(
+        num_things,
+        in_layer,
+        '{}_bias'.format(thing_name)
+    )
     return in_layer, factors_layer, bias
 
 
@@ -141,7 +183,7 @@ class CollaborativeFilteringModel():
 
 
 class SingleUserModel(CollaborativeFilteringModel):
-    def __init__(self, item_factors_layer_name='item_factors'):
+    def __init__(self, item_factors_layer_name='item_factors', player_id=None):
         self.model = load_model(
             PATH_TO_BEST_COLLABORATIVE_FILTERING_MODEL,
             custom_objects={
@@ -151,6 +193,15 @@ class SingleUserModel(CollaborativeFilteringModel):
         item_factors_layer = self.model.get_layer(item_factors_layer_name)
         item_factors_layer.trainable = False
         self.compile()
+        self.player_id = player_id
+
+    def fit(self, *args, callbacks=None, **kwds):
+        if callbacks is None:
+            callbacks = []
+            callbacks.append(SaveBestToDatabase(player_id=self.player_id))
+            callbacks.append(TerminateOnNaN())
+            callbacks.append(EarlyStopping(monitor='loss', patience=3))
+        return super().fit(*args, callbacks=callbacks, **kwds)
 
 
 class FindingSimilar(): pass

@@ -3,14 +3,15 @@ import numpy as np
 import pandas as pd
 
 from ratings.models import Game, Player, Rating
-from utils.constants import (
-    MAX_RATING_VALUE,
-    MIN_RATING_VALUE,
-)
 from training.keras.utils.constants import (
     MIN_RATINGS_FOR_TRAINING,
 )
-from training.models import TrainedOnGame, TrainedOnPlayer
+import sys
+print(sys.path)
+import training.models
+print(training)
+TrainedOnGame = training.models.TrainedOnGame
+TrainedOnPlayer = training.models.TrainedOnPlayer
 
 def _filter_by_sufficient_no_ratings(df):
     def _filter(key):
@@ -55,4 +56,19 @@ def load_dataset():
 def to_keras_model_indices(df, rebuild_indices=False):
     df = _to_trained_on(df, 'game_id', TrainedOnGame, rebuild=rebuild_indices)
     df = _to_trained_on(df, 'player_id', TrainedOnPlayer, rebuild=rebuild_indices)
+    return df
+
+def to_board_game_geek_ids(df):
+    trained_on_games = TrainedOnGame.objects.all().filter(
+        pk__in=df.model_game_id)
+    trained_on_df = pd.DataFrame.from_records(
+        trained_on_games.values('pk', 'game'))
+    trained_on = pd.Series(trained_on_df.set_index('pk'))
+
+    trained_on_bgg_games = Game.objects.filter(pk__in=trained_on_df.game)
+    trained_on_bgg_games = pd.DataFrame.from_records(
+        trained_on_bgg_games.values('pk', 'bgg_id'))
+    trained_on_bgg_games = pd.Series(trained_on_bgg_games.set_index('pk'))
+
+    df['bgg_id'] = df.model_game_id.map(trained_on).map(trained_on_bgg_games)
     return df

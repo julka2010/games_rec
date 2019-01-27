@@ -42,7 +42,7 @@ def train_player(player_id):
     ratings = pd.DataFrame.from_records(qs.values())
     ratings = data_preparation.to_keras_model_indices(ratings)
     np.random.shuffle(ratings.values)
-    model = training.keras.models.SingleUserModel()
+    model = training.keras.models.SingleUserModel(player_id=player_id)
     _history = model.fit(
         {
             'user_in': ratings.player_id.values,

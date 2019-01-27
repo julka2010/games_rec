@@ -1,5 +1,6 @@
+from django.http import HttpResponse
 from django.http import Http404, HttpResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 
 from ratings.models import Player
 from training.tasks import (
@@ -12,5 +13,10 @@ def everything(request):
     return HttpResponse('Training has started')
 
 def player(request, player_id):
-    train_player.delay(player_id)
-    return HttpResponse('Training has started')
+    task = train_player.delay(player_id)
+    response = redirect(
+        "recommendations::player-recommendations",
+        player_id=player_id,
+        task_id=task.id,
+    )
+    return response

@@ -134,6 +134,8 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
+MEDIA_ROOT = '/var/lib/'
+
 # Celery settings
 CELERY_BROKER_URL = os.environ['CELERY_BROKER']
 CELERY_TASK_SERIALIZER = 'json'
