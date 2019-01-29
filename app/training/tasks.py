@@ -1,9 +1,11 @@
 from __future__ import absolute_import
 
-from celery import shared_task
+from celery import  shared_task
+from celery.signals import task_postrun
 import pandas as pd
 import numpy as np
 
+from game_recommendations.celery import app
 from ratings.models import Player
 import training.keras.models
 from training.keras import (
@@ -42,7 +44,9 @@ def train_player(player_id):
     ratings = pd.DataFrame.from_records(qs.values())
     ratings = data_preparation.to_keras_model_indices(ratings)
     np.random.shuffle(ratings.values)
-    model = training.keras.models.SingleUserModel(player_id=player_id)
+    model = training.keras.models.SingleUserModel(
+        player_id=player_id,
+    )
     _history = model.fit(
         {
             'user_in': ratings.player_id.values,
@@ -51,3 +55,9 @@ def train_player(player_id):
         [ratings.value.values, ratings.value.values],
         verbose=2
     )
+
+
+@task_postrun.connect(sender=train_player)
+@task_postrun.connect(sender=train_everything)
+def shutdown(*args, **kwargs):
+    app.control.broadcast('shutdown')

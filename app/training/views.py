@@ -15,8 +15,9 @@ def everything(request):
 def player(request, player_id):
     task = train_player.delay(player_id)
     response = redirect(
-        "recommendations::player-recommendations",
-        player_id=player_id,
-        task_id=task.id,
+        "/recommendations/{player_id}?task_id={task_id}".format(
+            player_id=player_id,
+            task_id=task.id,
+        )
     )
     return response

@@ -29,6 +29,7 @@ from keras.models import (
 from keras.regularizers import l2
 
 from training.models import KerasSinglePlayerModel
+from training.keras.metrics import acceptable_absolute_deviation
 from training.keras.utils.constants import (
     BATCH_SIZE,
     KERAS_MODELS_FORMATTING,
@@ -64,7 +65,7 @@ class SaveBestToDatabase(Callback):
             filename = str(abs(hash(self.model))) + '.hdf5'
             temp_file_path = os.path.join(tempfile.gettempdir(), filename)
             self.model.save(temp_file_path)
-            db_model.keras_model.save(
+            db_model.keras_model_file.save(
                 filename,
                 File(open(temp_file_path, 'rb')),
             )
@@ -93,9 +94,6 @@ def _create_starting_layers(num_things, num_features, thing_name, regularizer):
     )
     return in_layer, factors_layer, bias
 
-
-def acceptable_absolute_deviation(y_true, y_pred, max_dev=0.1):
-    return K.mean(K.abs(y_true - y_pred) < max_dev)
 
 
 class CollaborativeFilteringModel():

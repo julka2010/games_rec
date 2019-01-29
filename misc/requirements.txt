@@ -1,15 +1,14 @@
 celery
-dj-database-url
 Django
 django-celery-results
 gunicorn
 ijson
 Keras
+lazy
 Markdown
 numpy
 pandas
 psycopg2
-PyYAML
 Scrapy
 tensorflow-gpu
 pylint
