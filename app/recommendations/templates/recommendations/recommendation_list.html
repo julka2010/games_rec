@@ -1,0 +1,9 @@
+{% if recommendation_list %}
+    <ol>
+    {% for recommendation in recommendation_list %}
+        <li><a href="https://www.boardgamegeek.com/game/{{ recommendation.bgg_id }}/">{{ recommendation.bgg_id}}</a></li>
+    {% endfor %}
+    </ol>
+{% else %}
+    <p>No recommendations, sorry :(.</p>
+{% endif %}
