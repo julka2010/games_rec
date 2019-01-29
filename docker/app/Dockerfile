@@ -16,8 +16,10 @@ WORKDIR /app
 ENV LANG=C.UTF-8
 EXPOSE 8000
 
-COPY ./misc/requirements.txt /app/
-RUN pip install -r /app/requirements.txt
+COPY Pipfile Pipfile
+COPY Pipfile.lock Pipfile.lock
+RUN pip install pipenv && \
+    pipenv install --deploy --system
 
 COPY ./misc/start-gunicorn.sh /usr/local/bin/
 COPY ./app /app
