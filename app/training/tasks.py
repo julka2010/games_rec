@@ -1,12 +1,9 @@
 from __future__ import absolute_import
-from functools import wraps
 
 from celery import  shared_task
-from celery.signals import task_postrun
 import numpy as np
 import pandas as pd
 
-from game_recommendations.celery import app
 from ratings.models import Player
 from training.models import KerasSinglePlayerModel
 import training.keras.models
@@ -15,20 +12,7 @@ from training.keras import (
 )
 from training.keras.utils.constants import NUM_ITEM_FEATURES
 
-import logging
-
-def cleanup_gpu_after(func):
-    @wraps(func)
-    def wrapped(*args, **kwds):
-        print(args, kwds)
-        res = func(*args, **kwds)
-        return res
-
-    return wrapped
-
-
 @shared_task
-@cleanup_gpu_after
 def train_everything(rebuild_indices=True):
     ratings = data_preparation.load_dataset()
     ratings = data_preparation.to_keras_model_indices(
@@ -52,7 +36,6 @@ def train_everything(rebuild_indices=True):
 
 
 @shared_task
-@cleanup_gpu_after
 def train_player(player_id):
     player = Player.objects.get(pk=player_id)
     qs = player.rating_set.all()
@@ -73,7 +56,6 @@ def train_player(player_id):
 
 
 @shared_task
-@cleanup_gpu_after
 def get_player_predictions(model_id, games_id, limit):
     model = KerasSinglePlayerModel.objects.get(id=model_id)
     to_be_pred = pd.read_json(games_id)
@@ -90,5 +72,4 @@ def get_player_predictions(model_id, games_id, limit):
             'model_game_id': to_be_pred.game_id.values
     }).sort_values('prediction', ascending=False).reset_index(drop=True)
     recommendations = recommendations.iloc[:limit]
-    print(recommendations)
     return recommendations.to_json()
