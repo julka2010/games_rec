@@ -15,11 +15,12 @@ FROM tensorflow/tensorflow:latest-gpu-py3
 WORKDIR /app
 ENV LANG=C.UTF-8
 EXPOSE 8000
+COPY ./docker/celery/scripts/docker-entrypoint.sh /usr/local/bin/celery-entrypoint.sh
+COPY ./misc/start-gunicorn.sh /usr/local/bin/
 
 COPY Pipfile Pipfile
 COPY Pipfile.lock Pipfile.lock
 RUN pip install pipenv && \
     pipenv install --deploy --system
 
-COPY ./misc/start-gunicorn.sh /usr/local/bin/
 COPY ./app /app

@@ -17,4 +17,4 @@ env/*
 .envrc
 
 # docker volumes
-docker/**/*
+docker/**/data.vlm/**/*

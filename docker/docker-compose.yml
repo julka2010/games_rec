@@ -24,18 +24,33 @@ services:
 
   celery:
     image: *app
-    command: ["celery", "worker", "--app=game_recommendations", "--loglevel=INFO"]
+    command: ["celery-entrypoint.sh"]
     env_file:
       - .env
+    restart: always
     runtime: nvidia
     networks:
       - celery-net
       - database-net
     volumes:
-      - './docker/app/data/keras_models:/var/lib/keras_models'
+      - './docker/app/data.vlm/keras_models:/var/lib/keras_models'
       - './app:/app'
     depends_on:
       - celery-broker
+
+  flower:
+    image: *app
+    command: ["celery", "flower", "-A", "game_recommendations"]
+    env_file:
+      - .env
+    networks:
+      - celery-net
+    volumes:
+      - './app:/app'
+    depends_on:
+      - celery
+    ports:
+      - ${EXPOSE_FLOWER}:5555
 
   psql:
     image: "postgres:11-alpine"

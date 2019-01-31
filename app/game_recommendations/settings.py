@@ -25,7 +25,7 @@ SECRET_KEY = '-w@6^f#4v2-4j$jhk5637bcr50#tr#gzc@59&n$3-1t@r=eqcr'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost']
+ALLOWED_HOSTS = ['testserver', 'localhost']
 
 
 # Application definition
@@ -140,3 +140,4 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_RESULT_BACKEND = 'django-db'
+CELERY_TASK_ROUTES = {'training.tasks.*': {'queue': 'gpu-bound'}}

@@ -23,6 +23,7 @@ django_celery_results = "*"
 Keras = "*"
 Scrapy = "*"
 numba = "*"
+flower = "*"
 
 [requires]
 python_version = "3.5"
