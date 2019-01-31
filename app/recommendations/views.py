@@ -37,6 +37,5 @@ def recommendations(request, player_id=None):
     unplayed_games = pd.DataFrame.from_records(
         player.unplayed_games.values('id')).rename(columns={'id': 'game_id'})
     recs = model.get_recommendations(unplayed_games)
-    return HttpResponse(recs.to_html())
-    context = {'recommendations_list' : recs}
+    context = {'recommendation_list' : recs}
     return render(request, 'recommendations/recommendation_list.html', context)

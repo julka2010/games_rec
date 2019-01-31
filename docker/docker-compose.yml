@@ -19,15 +19,15 @@ services:
     ports:
       - ${EXPOSE_APP}:8000
     depends_on:
-      - celery
+      - worker
+      - gpu-worker
       - psql
 
-  celery:
+  gpu-worker:
     image: *app
-    command: ["celery-entrypoint.sh"]
+    command: ["celery", "worker", "-A", "game_recommendations", "-Q", "gpu-bound", "--concurrency=1", "--loglevel=INFO"]
     env_file:
       - .env
-    restart: always
     runtime: nvidia
     networks:
       - celery-net
@@ -38,9 +38,22 @@ services:
     depends_on:
       - celery-broker
 
-  flower:
+  worker:
     image: *app
-    command: ["celery", "flower", "-A", "game_recommendations"]
+    command: ["celery", "worker", "-A", "game_recommendations", "-Q", "celery", "--loglevel=INFO"]
+    env_file:
+      - .env
+    networks:
+      - celery-net
+      - database-net
+    volumes:
+      - './docker/app/data.vlm/keras_models:/var/lib/keras_models'
+      - './app:/app'
+    depends_on:
+      - celery-broker
+
+  flower:
+    image: mher/flower
     env_file:
       - .env
     networks:
@@ -48,7 +61,7 @@ services:
     volumes:
       - './app:/app'
     depends_on:
-      - celery
+      - celery-broker
     ports:
       - ${EXPOSE_FLOWER}:5555
 

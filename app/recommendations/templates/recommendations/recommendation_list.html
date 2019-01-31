@@ -1,6 +1,6 @@
-{% if recommendation_list %}
+{% if not recommendation_list.empty %}
     <ol>
-    {% for recommendation in recommendation_list %}
+    {% for _, recommendation in recommendation_list.iterrows %}
         <li><a href="https://www.boardgamegeek.com/game/{{ recommendation.bgg_id }}/">{{ recommendation.bgg_id}}</a></li>
     {% endfor %}
     </ol>

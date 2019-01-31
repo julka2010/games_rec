@@ -45,22 +45,14 @@ class KerasSinglePlayerModel(models.Model):
             }
         )
 
-    def get_recommendations(self, games_id, limit=100):
+    def get_recommendations(self, games_id, limit=10):
         from training.keras.data_preparation import (
             to_board_game_geek_ids,
-            to_keras_model_indices,
         )
-        to_be_pred = pd.DataFrame(games_id, columns=['game_id'])
-        to_be_pred['player_id'] = self.player_id
-        to_be_pred = to_keras_model_indices(to_be_pred)
-        ratings, _ = self.keras_model.predict( # pylint: disable=no-member
-            {
-                'user_in': to_be_pred.player_id.values,
-                'item_in': to_be_pred.game_id.values,
-            },
+        from training.tasks import get_player_predictions
+        assert 'game_id' in games_id
+        recommendations = get_player_predictions.delay(
+            self.id, games_id.to_json(), limit
         )
-        recommendations = pd.DataFrame({
-            'prediction': ratings.reshape(-1),
-            'model_game_id': to_be_pred.game_id.values
-        }).sort_values('prediction', ascending=False).reset_index(drop=True)
-        return to_board_game_geek_ids(recommendations.iloc[:limit])
+        recommendations = recommendations.wait(interval=1)
+        return to_board_game_geek_ids(pd.read_json(recommendations))
