@@ -14,7 +14,7 @@ services:
       - celery-net
       - database-net
     volumes:
-      - './docker/app/data/keras_models:/var/lib/keras_models'
+      - './docker/app/data.vlm/keras_models:/var/lib/keras_models'
       - './app:/app'
     ports:
       - ${EXPOSE_APP}:8000
