@@ -1,11 +1,13 @@
 from django.contrib.postgres.fields import JSONField
 from django.db import models
+from django_pandas.managers import DataFrameManager
 
 class Game(models.Model):
     bgg_id = models.IntegerField(
         default=None, blank=True, null=True,
         unique=True,
     )
+    objects = DataFrameManager()
     title = models.CharField(max_length=255)
     min_players = models.IntegerField(default=None, blank=True, null=True)
     max_players = models.IntegerField(default=None, blank=True, null=True)
@@ -20,7 +22,7 @@ class Player(models.Model):
         max_length=255,
         default=None, blank=True, null=True
     )
-    objects = models.Manager()
+    objects = DataFrameManager()
     games = models.ManyToManyField(Game, through='rating')
 
     @property
@@ -34,5 +36,6 @@ class Rating(models.Model):
     player = models.ForeignKey(Player, models.CASCADE)
     game = models.ForeignKey(Game, models.CASCADE)
     value = models.FloatField(default=8.7)
+    objects = DataFrameManager()
     class Meta:
         unique_together = (('player', 'game'))

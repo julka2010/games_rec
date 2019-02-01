@@ -34,8 +34,8 @@ def recommendations(request, player_id=None):
         raise RuntimeError(
             'Personal recommendations should always get model_id or player_id')
     player = Player.objects.get(pk=player_id)
-    unplayed_games = pd.DataFrame.from_records(
-        player.unplayed_games.values('id')).rename(columns={'id': 'game_id'})
+    unplayed_games = player.unplayed_games.to_dataframe('id'
+        ).rename(columns={'id': 'game_id'})
     recs = model.get_recommendations(unplayed_games)
     context = {'recommendation_list' : recs}
     return render(request, 'recommendations/recommendation_list.html', context)
