@@ -45,7 +45,7 @@ class KerasSinglePlayerModel(models.Model):
             }
         )
 
-    def get_recommendations(self, games_id, limit=10):
+    def get_recommendations(self, games_id, limit=100):
         from training.tasks import get_player_predictions
         assert 'game_id' in games_id
         recommendations = get_player_predictions.delay(
