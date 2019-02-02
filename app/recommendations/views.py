@@ -1,11 +1,34 @@
+from celery import chain
 from celery.result import AsyncResult
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import QueryDict, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_list_or_404, get_object_or_404, render
+from django.urls import reverse
 import pandas as pd
 
 from ratings.forms import PlayerSearchForm
 from ratings.models import Player
 from training.models import KerasSinglePlayerModel
+from training.tasks import train_player, get_player_predictions
+
+def build_url(viewname, kwargs):
+    """django.urls.reverse + request.get parameters.
+
+    Taken from https://stackoverflow.com/a/20459192
+    """
+    params = kwargs.pop('get', {})
+    url = reverse(viewname, kwargs=kwargs)
+    if not params:
+        return url
+
+    qdict = QueryDict('', mutable=True)
+    for k, v in params.items():
+        if isinstance(v, list):
+            qdict.setlist(k, v)
+        else:
+            qdict[k] = v
+
+    return url + '?' + qdict.urlencode()
+
 
 def index(request):
     if request.method == 'POST':
@@ -15,10 +38,19 @@ def index(request):
                 Player,
                 bgg_username=form.cleaned_data['search_query']
             )
-            return HttpResponseRedirect('/training/player/{}'.format(player.id))
+            task_id = train_player.delay(player.id).id
+            url = build_url(
+                'recommendations:player-recommendations',
+                kwargs={
+                    'player_id': player.id,
+                    'get': {'task_id': task_id},
+                }
+            )
+            return HttpResponseRedirect(url)
     else:
         form = PlayerSearchForm()
     return render(request, 'recommendations/index.html', {'form': form})
+
 
 def recommendations(request, player_id=None):
     task_id = request.GET.get('task_id', None)
@@ -35,7 +67,7 @@ def recommendations(request, player_id=None):
             'Personal recommendations should always get model_id or player_id')
     player = Player.objects.get(pk=player_id)
     unplayed_games = player.unplayed_games.to_dataframe('id'
-        ).rename(columns={'id': 'game_id'})
+        ).rename(columns={'id': 'game_id'}).reset_index(drop=True)
     recs = model.get_recommendations(unplayed_games)
     context = {'recommendation_list' : recs}
     return render(request, 'recommendations/recommendation_list.html', context)

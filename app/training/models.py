@@ -46,13 +46,10 @@ class KerasSinglePlayerModel(models.Model):
         )
 
     def get_recommendations(self, games_id, limit=10):
-        from training.keras.data_preparation import (
-            to_board_game_geek_ids,
-        )
         from training.tasks import get_player_predictions
         assert 'game_id' in games_id
         recommendations = get_player_predictions.delay(
             self.id, games_id.to_json(), limit
         )
         recommendations = recommendations.wait(interval=1)
-        return to_board_game_geek_ids(pd.read_json(recommendations))
+        return pd.read_json(recommendations)
