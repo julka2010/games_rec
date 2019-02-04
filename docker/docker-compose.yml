@@ -5,14 +5,15 @@ services:
     build:
       dockerfile: './docker/app/Dockerfile'
       context: '.'
+    container_name: app
     command: ["start-gunicorn.sh"]
     image: &app app
     env_file:
       - .env
     networks:
-      - gamesrec-net
       - celery-net
       - database-net
+      - nginx-net
     volumes:
       - media-vol:/var/lib/media
       - static-vol:/var/lib/static
@@ -22,7 +23,6 @@ services:
     depends_on:
       - worker
       - gpu-worker
-      - nginx
       - psql
 
   gpu-worker:
@@ -91,15 +91,23 @@ services:
       - ${EXPOSE_RABBITMQ}:5672
 
   nginx:
-    image: "nginx:alpine"
+    build:
+      context: ./docker/nginx
+      dockerfile: Dockerfile
+    networks:
+      - nginx-net
     volumes:
-      - media-vol:/var/lib/media
-      - static-vol:/var/lib/static
+      - media-vol:/var/www/media
+      - static-vol:/var/www/static
+    depends_on:
+      - app
+    ports:
+      - 80:80
 
 networks:
   celery-net:
   database-net:
-  gamesrec-net:
+  nginx-net:
 
 volumes:
   database-vol:
