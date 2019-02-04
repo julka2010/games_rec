@@ -127,13 +127,15 @@ USE_L10N = True
 
 USE_TZ = True
 
+# At the moment the only "media" are keras models; no need to have url for them
+BASE_FILES_DIR = os.path.join('/var', 'lib')
+MEDIA_ROOT = os.path.join(BASE_FILES_DIR, 'media')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
+STATIC_ROOT = os.path.join(BASE_FILES_DIR, 'static')
 STATIC_URL = '/static/'
-
-MEDIA_ROOT = '/var/lib/'
 
 # Celery settings
 CELERY_BROKER_URL = os.environ['CELERY_BROKER_URL']

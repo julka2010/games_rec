@@ -1,7 +1,9 @@
 import os
 
+from game_recommendations.settings import MEDIA_ROOT
+
 KERAS_MODELS_DIR = ('keras_models')
-ABSOLUTE_KERAS_MODELS_DIR = os.path.join('/var', 'lib', KERAS_MODELS_DIR)
+ABSOLUTE_KERAS_MODELS_DIR = os.path.join(MEDIA_ROOT, KERAS_MODELS_DIR)
 KERAS_MODELS_FORMATTING = os.path.join(
     ABSOLUTE_KERAS_MODELS_DIR, 'weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 )

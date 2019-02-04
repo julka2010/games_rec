@@ -11,10 +11,11 @@ services:
       - .env
     runtime: nvidia
     networks:
+      - gamesrec-net
       - celery-net
       - database-net
     volumes:
-      - './docker/app/data.vlm/keras_models:/var/lib/keras_models'
+      - media-vol:/var/lib/media
       - './app:/app'
     ports:
       - ${EXPOSE_APP}:8000
@@ -33,7 +34,7 @@ services:
       - celery-net
       - database-net
     volumes:
-      - './docker/app/data.vlm/keras_models:/var/lib/keras_models'
+      - media-vol:/var/lib/media
       - './app:/app'
     depends_on:
       - celery-broker
@@ -47,7 +48,7 @@ services:
       - celery-net
       - database-net
     volumes:
-      - './docker/app/data.vlm/keras_models:/var/lib/keras_models'
+      - media-vol:/var/lib/media
       - './app:/app'
     depends_on:
       - celery-broker
@@ -70,7 +71,7 @@ services:
     networks:
       - database-net
     volumes:
-      - './docker/psql/data.vlm:/var/lib/postgresql/data'
+      - database-vol:/var/lib/postgresql/data
       - './docker/psql/scripts/init-db.sh:/init-db.sh'
     environment:
       - POSTGRES_DB=${PSQL_DB_NAME}
@@ -91,3 +92,9 @@ services:
 networks:
   celery-net:
   database-net:
+  gamesrec-net:
+
+volumes:
+  database-vol:
+  media-vol:
+  static-vol:
