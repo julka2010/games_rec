@@ -9,19 +9,20 @@ services:
     image: &app app
     env_file:
       - .env
-    runtime: nvidia
     networks:
       - gamesrec-net
       - celery-net
       - database-net
     volumes:
       - media-vol:/var/lib/media
+      - static-vol:/var/lib/static
       - './app:/app'
     ports:
       - ${EXPOSE_APP}:8000
     depends_on:
       - worker
       - gpu-worker
+      - nginx
       - psql
 
   gpu-worker:
@@ -88,6 +89,12 @@ services:
       - celery-net
     ports:
       - ${EXPOSE_RABBITMQ}:5672
+
+  nginx:
+    image: "nginx:alpine"
+    volumes:
+      - media-vol:/var/lib/media
+      - static-vol:/var/lib/static
 
 networks:
   celery-net:
