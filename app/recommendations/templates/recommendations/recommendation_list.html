@@ -1,9 +1,14 @@
-{% if not recommendation_list.empty %}
-    <ol>
-    {% for _, recommendation in recommendation_list.iterrows %}
-        <li><a href="https://www.boardgamegeek.com/game/{{ recommendation.bgg_id }}/">{{ recommendation.bgg_id}}</a></li>
-    {% endfor %}
-    </ol>
-{% else %}
+{% load static %}
+<link rel='stylesheet' type="text/css" href="{% static 'recommendations/style.css' %}">
+<div class="rightnav">
+    <div>
+        {% include 'commons/donation_box.html' %}
+    </div>
+</div>
+<ol>
+{% for _, recommendation in recommendation_list.iterrows %}
+    <li><a href="https://www.boardgamegeek.com/game/{{ recommendation.bgg_id }}/">{{ recommendation.bgg_id}}</a></li>
+{% empty %}
     <p>No recommendations, sorry :(.</p>
-{% endif %}
+{% endfor %}
+</ol>
