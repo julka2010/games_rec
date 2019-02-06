@@ -1,14 +1,13 @@
-{% load static %}
-<link rel='stylesheet' type="text/css" href="{% static 'recommendations/style.css' %}">
-<div class="rightnav">
-    <div>
-        {% include 'commons/donation_box.html' %}
+{% extends 'commons/base.html' %}
+
+{% block main %}
+    <div role="main">
+        <ol>
+        {% for _, recommendation in recommendation_list.iterrows %}
+            <li><a href="https://www.boardgamegeek.com/game/{{ recommendation.bgg_id }}/">{{ recommendation.title}}</a></li>
+        {% empty %}
+            <p>No recommendations, sorry :(.</p>
+        {% endfor %}
+        </ol>
     </div>
-</div>
-<ol>
-{% for _, recommendation in recommendation_list.iterrows %}
-    <li><a href="https://www.boardgamegeek.com/game/{{ recommendation.bgg_id }}/">{{ recommendation.bgg_id}}</a></li>
-{% empty %}
-    <p>No recommendations, sorry :(.</p>
-{% endfor %}
-</ol>
+{% endblock %}

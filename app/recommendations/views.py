@@ -1,3 +1,5 @@
+import logging
+
 from celery import chain
 from celery.result import AsyncResult
 from django.http import QueryDict, HttpResponse, HttpResponseRedirect
@@ -6,7 +8,7 @@ from django.urls import reverse
 import pandas as pd
 
 from ratings.forms import PlayerSearchForm
-from ratings.models import Player
+from ratings.models import Game, Player
 from training.models import KerasSinglePlayerModel
 from training.tasks import train_player, get_player_predictions
 
@@ -66,8 +68,12 @@ def recommendations(request, player_id=None):
         raise RuntimeError(
             'Personal recommendations should always get model_id or player_id')
     player = Player.objects.get(pk=player_id)
-    unplayed_games = player.unplayed_games.to_dataframe('id'
+    unplayed_games = player.unplayed_games.standalone_games(
+        ).filter(ratings_count__gte=100
+        ).to_dataframe('id'
         ).rename(columns={'id': 'game_id'}).reset_index(drop=True)
     recs = model.get_recommendations(unplayed_games)
-    context = {'recommendation_list' : recs}
+    titles = Game.objects.get_by_pks(recs.pk).to_dataframe(['bgg_id', 'title'])
+    logging.error(titles)
+    context = {'recommendation_list' : titles}
     return render(request, 'recommendations/recommendation_list.html', context)

@@ -1,0 +1,32 @@
+.rightnav {
+    height: 100%;
+    width: 240px;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    right: 0;
+    overflow-x: hidden;
+    padding-top: 20px;
+}
+
+#topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.donate h2 {
+    text-align: center
+}
+
+.donate p {
+    text-align: justify
+}
+
+.donate {
+    margin-left: 10px;
+}
+
+.donate * {
+    margin-left: 0px;
+}
