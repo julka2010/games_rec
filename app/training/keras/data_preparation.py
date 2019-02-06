@@ -54,17 +54,27 @@ def to_keras_model_indices(df, rebuild_indices=False):
     df = _to_trained_on(df, 'player_id', TrainedOnPlayer, rebuild=rebuild_indices)
     return df
 
-def to_board_game_geek_ids(df):
+# =============================================================================
+# From data keras works on to data db works on ================================
+# =============================================================================
+
+def to_pks(df):
     trained_on_games = TrainedOnGame.objects.all().filter(
         pk__in=df.model_game_id)
     trained_on_df = pd.DataFrame.from_records(
         trained_on_games.values('pk', 'game'))
     trained_on = pd.Series(trained_on_df.set_index('pk')['game'])
 
+    df['pk'] = df.model_game_id.map(trained_on)
+    return df
+
+
+def to_board_game_geek_ids(df):
+    df = to_pks(df)
     trained_on_bgg_games = Game.objects.filter(pk__in=trained_on_df.game)
     trained_on_bgg_games = pd.DataFrame.from_records(
         trained_on_bgg_games.values('pk', 'bgg_id'))
     trained_on_bgg_games = pd.Series(trained_on_bgg_games.set_index('pk')['bgg_id'])
 
-    df['bgg_id'] = df.model_game_id.map(trained_on).map(trained_on_bgg_games)
+    df['bgg_id'] = df['pk'].map(trained_on_bgg_games)
     return df

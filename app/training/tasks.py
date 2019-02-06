@@ -8,7 +8,7 @@ import pandas as pd
 from ratings.models import Player
 from training.models import KerasSinglePlayerModel
 import training.keras.models
-from training.keras import data_preparation as dp
+import training.keras.data_preparation as dp
 
 from training.keras.utils.constants import NUM_ITEM_FEATURES
 
@@ -80,4 +80,4 @@ def get_player_predictions(model_id, games_id, limit):
         'model_game_id': to_be_pred.game_id.values
     }).sort_values('prediction', ascending=False).reset_index(drop=True)
     recommendations = recommendations.iloc[:limit]
-    return dp.to_board_game_geek_ids(recommendations).to_json()
+    return dp.to_pks(recommendations).to_json()
