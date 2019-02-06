@@ -199,7 +199,8 @@ class SingleUserModel(CollaborativeFilteringModel):
             callbacks.append(SaveBestToDatabase(player_id=self.player_id))
             callbacks.append(TerminateOnNaN())
             callbacks.append(EarlyStopping(monitor='loss', patience=3))
-        return super().fit(*args, callbacks=callbacks, **kwds)
+        super().fit(*args, callbacks=callbacks, **kwds)
+        return super().fit(*args, validation_split=0, callbacks=callbacks, **kwds)
 
 
 class FindingSimilar(): pass
