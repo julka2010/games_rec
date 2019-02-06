@@ -1,20 +1,56 @@
 from django.contrib.postgres.fields import JSONField
 from django.db import models
-from django_pandas.managers import DataFrameManager
+from django_pandas.managers import (
+    DataFrameManager,
+    DataFrameQuerySet,
+)
+
+
+class GamesQuerySet(DataFrameQuerySet):
+    def standalone_games(self):
+        return self.filter(standalone=True)
+
+    def get_by_pks(self, pks):
+        """Returns qs finding by pks and preserving given pks order.
+
+        Soitje's code taken from
+        https://stackoverflow.com/a/37648265/4371768
+        """
+        preserved = models.Case(
+            *[models.When(pk=pk, then=pos) for pos, pk in enumerate(pks)])
+        return self.filter(pk__in=pks).order_by(preserved)
+
+    def by_ratings_count(self, **kwds):
+        """Adds annotation 'ratings_count' and filters immediately.
+
+        It is expected to use ratings_count__gte and ratings_count__lte
+        here, mostly.
+        """
+        return self.annotate(ratings_count=models.Count('rating')
+            ).filter(**kwds)
+
+
+# pylint: disable=invalid-name
+GamesManager = models.Manager.from_queryset(GamesQuerySet)
+# pylint: enable=invalid-name
+
 
 class Game(models.Model):
+    objects = GamesManager()
+
     bgg_id = models.IntegerField(
         default=None, blank=True, null=True,
         unique=True,
     )
-    objects = DataFrameManager()
-    title = models.CharField(max_length=255)
-    min_players = models.IntegerField(default=None, blank=True, null=True)
-    max_players = models.IntegerField(default=None, blank=True, null=True)
-    min_playtime = models.IntegerField(default=None, blank=True, null=True)
-    max_playtime = models.IntegerField(default=None, blank=True, null=True)
-    weight = models.FloatField(default=None, blank=True, null=True)
     dump = JSONField(default=dict)
+    max_players = models.IntegerField(default=None, blank=True, null=True)
+    max_playtime = models.IntegerField(default=None, blank=True, null=True)
+    min_players = models.IntegerField(default=None, blank=True, null=True)
+    min_playtime = models.IntegerField(default=None, blank=True, null=True)
+    ratings_count = models.IntegerField(default=0, editable=False)
+    standalone = models.BooleanField(default=True)
+    title = models.CharField(max_length=255)
+    weight = models.FloatField(default=None, blank=True, null=True)
 
 
 class Player(models.Model):
