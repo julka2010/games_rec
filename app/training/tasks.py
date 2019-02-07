@@ -58,7 +58,7 @@ def train_player(player_id):
 @shared_task
 def get_player_predictions(model_id, games_id, limit):
     model = KerasSinglePlayerModel.objects.get(id=model_id)
-    to_be_pred = pd.read_json(games_id)
+    to_be_pred = pd.DataFrame(games_id, columns=['game_id'])
     del games_id
     to_be_pred['player_id'] = model.player_id  # pylint: disable=no-member
     logging.info(

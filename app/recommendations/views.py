@@ -70,8 +70,7 @@ def recommendations(request, player_id=None):
     player = Player.objects.get(pk=player_id)
     unplayed_games = player.unplayed_games.standalone_games(
         ).filter(ratings_count__gte=100
-        ).to_dataframe('id'
-        ).rename(columns={'id': 'game_id'}).reset_index(drop=True)
+        ).to_dataframe('id').reset_index(drop=True).id
     recs = model.get_recommendations(unplayed_games)
     titles = Game.objects.get_by_pks(recs.pk).to_dataframe(['bgg_id', 'title'])
     logging.error(titles)
