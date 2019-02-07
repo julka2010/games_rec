@@ -56,12 +56,8 @@ class SaveBestToDatabase(Callback):
             db_model = KerasSinglePlayerModel(
                 epoch=int(epoch),
                 loss=logs.get('loss'),
-                output_mean_absolute_error=logs.get(
-                    'output_mean_absolute_error'),
                 player_id=self.player_id,
                 val_loss=int(logs.get('val_loss')),
-                val_output_mean_absolute_error=logs.get(
-                    'val_output_mean_absolute_error'),
             )
             filename = str(abs(hash(self.model))) + '.hdf5'
             temp_file_path = os.path.join(tempfile.gettempdir(), filename)
@@ -211,12 +207,13 @@ class CollaborativeFilteringModel():
         )
 
     def train(self, ratings_df, games_id, validation_split=0.1, **kwds):
+        batch_size = kwds.pop('batch_size', BATCH_SIZE)
         n_samples = ratings_df.shape[0]
         cutoff = int(-n_samples * validation_split)
         validation_df = ratings_df.iloc[cutoff:]
         training_df = ratings_df.iloc[:cutoff]
-        training_generator = dp.BatchGenerator(training_df, games_id)
-        validation_generator = dp.BatchGenerator(validation_df, games_id)
+        training_generator = dp.BatchGenerator(training_df, games_id, batch_size)
+        validation_generator = dp.BatchGenerator(validation_df, games_id, batch_size)
         return self.fit_generator(
             generator=training_generator,
             validation_data = validation_generator,
@@ -236,15 +233,20 @@ class SingleUserModel(CollaborativeFilteringModel):
         item_factors_layer.trainable = False
         self.compile()
         self.player_id = player_id
+        self._default_callbacks = [
+            SaveBestToDatabase(player_id=self.player_id),
+            TerminateOnNaN(),
+            EarlyStopping(monitor='loss', patience=3),
+        ]
 
-    def fit(self, *args, callbacks=None, **kwds):
-        if callbacks is None:
-            callbacks = []
-            callbacks.append(SaveBestToDatabase(player_id=self.player_id))
-            callbacks.append(TerminateOnNaN())
-            callbacks.append(EarlyStopping(monitor='loss', patience=3))
+    def fit(self, *args, **kwds):
+        callbacks = kwds.pop('callbacks', self._default_callbacks)
         super().fit(*args, callbacks=callbacks, **kwds)
         return super().fit(*args, validation_split=0, callbacks=callbacks, **kwds)
+
+    def train(self, ratings_df, games_id, **kwds):
+        callbacks = kwds.pop('callbacks', self._default_callbacks)
+        return super().train(ratings_df, games_id, callbacks=callbacks, **kwds)
 
 
 class FindingSimilar(): pass

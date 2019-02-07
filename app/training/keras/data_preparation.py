@@ -69,7 +69,7 @@ class BatchGenerator(Sequence):
         self.ratings_df = ratings_df
         self.ratings_by_player = ratings_df.groupby('player_id')
         self.games_id = games_id
-        self.batch_size = batch_size
+        self.batch_size = min(batch_size, ratings_df.shape[0])
         if not shuffle:
             raise RuntimeError('Values will be shuffled.')
         self.shuffle = shuffle
@@ -98,8 +98,12 @@ class BatchGenerator(Sequence):
     def on_epoch_end(self):
         """Updates indexes after after each epoch."""
         def shuffle_by_player():
-            df = self.ratings_player.apply(lambda x: x.sample(frac=1))
-            return df.reset_index(drop=True)
+            dfs = []
+            for _, group in self.ratings_by_player:
+                t = group.copy()
+                np.random.shuffle(t.values)
+                dfs.append(t)
+            return pd.concat(dfs)
         self.original = shuffle_by_player()
         self.comparison = shuffle_by_player()
         self.indexes = np.arange(self.ratings_df.shape[0])

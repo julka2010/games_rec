@@ -1,4 +1,5 @@
 from __future__ import absolute_import
+from functools import cmp_to_key
 import logging
 
 from celery import  shared_task
@@ -6,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from ratings.models import Player
-from training.models import KerasSinglePlayerModel
+from training.models import KerasSinglePlayerModel, TrainedOnGame
 import training.keras.models
 import training.keras.data_preparation as dp
 
@@ -42,18 +43,24 @@ def train_player(player_id):
     model = training.keras.models.SingleUserModel(
         player_id=player_id,
     )
-    _history = model.fit(
-        {
-            'user_in': ratings.player_id.values,
-            'item_in': ratings.game_id.values
-        },
-        [ratings.value.values, ratings.value.values],
-        verbose=2
+    _history = model.train(
+        ratings,
+        TrainedOnGame.objects.all().values_list('pk', flat=True),
+        verbose=2,
     )
 
 
 @shared_task
 def get_player_predictions(model_id, games_id, limit):
+    def _compare_two_games(a, b):
+        inputs = {
+            'user_in': player_indice,
+            'item_in': np.array((a, b)).reshape(-1, 2),
+        }
+        values, highest = model.keras_model.predict(inputs)
+        highest = np.squeeze(highest)
+        return highest[0] - highest[1]
+
     model = KerasSinglePlayerModel.objects.get(id=model_id)
     to_be_pred = pd.DataFrame(games_id, columns=['game_id'])
     del games_id
@@ -66,15 +73,10 @@ def get_player_predictions(model_id, games_id, limit):
     )
     logging.debug("Head of DataFrame to be processed:\n%s", to_be_pred.head())
     to_be_pred = dp.to_keras_model_indices(to_be_pred)
-    ratings, _ = model.keras_model.predict( # pylint: disable=no-member
-        {
-            'user_in': to_be_pred.player_id.values,
-            'item_in': to_be_pred.game_id.values,
-        },
-    )
-    recommendations = pd.DataFrame({
-        'prediction': ratings.reshape(-1),
-        'model_game_id': to_be_pred.game_id.values
-    }).sort_values('prediction', ascending=False).reset_index(drop=True)
-    recommendations = recommendations.iloc[:limit]
+    player_indice = to_be_pred.player_id
+    recommendations = pd.DataFrame(sorted(
+        to_be_pred.game_id,
+        key=cmp_to_key(_compare_two_games),
+    )[:limit], columns=['model_game_id'])
+    logging.error(recommendations)
     return dp.to_pks(recommendations).to_json()

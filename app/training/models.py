@@ -27,14 +27,12 @@ class KerasSinglePlayerModel(models.Model):
         upload_to='keras_models',
     )
     loss = models.FloatField()
-    output_mean_absolute_error = models.FloatField(null=True, default=None)
     player = models.ForeignKey(
         Player, on_delete=models.CASCADE,
         editable=False,
         null=True, blank=True, default=None,
     )
     val_loss = models.FloatField()
-    val_output_mean_absolute_error = models.FloatField(null=True, default=None)
 
     @lazy
     def keras_model(self):
