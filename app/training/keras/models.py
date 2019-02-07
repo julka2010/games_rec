@@ -29,6 +29,7 @@ from keras.models import (
 from keras.regularizers import l2
 
 from training.models import KerasSinglePlayerModel
+import training.keras.data_preparation as dp
 from training.keras.metrics import acceptable_absolute_deviation
 from training.keras.utils.constants import (
     BATCH_SIZE,
@@ -72,40 +73,59 @@ class SaveBestToDatabase(Callback):
             db_model.save()
 
 
-def _create_embedding_bias(num_things, thing_in, name):
+def _create_embedding_bias(num_things, thing_in, input_length, name):
     return Flatten()(
-        Embedding(num_things, 1, input_length=1, name=name)(thing_in)
+        Embedding(num_things, 1, input_length=input_length, name=name)(thing_in)
     )
 
 
-def _create_starting_layers(num_things, num_features, thing_name, regularizer):
-    in_layer = Input(shape=(1,), dtype='int64', name='{}_in'.format(thing_name))
+def _create_starting_layers(
+        num_things,
+        num_features,
+        input_length,
+        thing_name,
+        regularizer
+    ):
+    in_layer = Input(
+        shape=(input_length,),
+        dtype='int64',
+        name='{}_in'.format(thing_name)
+    )
     factors_layer = Embedding(
         num_things,
         num_features,
-        input_length=1,
+        input_length=input_length,
         embeddings_regularizer=regularizer,
         name='{}_factors'.format(thing_name),
     )(in_layer)
     bias = _create_embedding_bias(
         num_things,
         in_layer,
+        input_length,
         '{}_bias'.format(thing_name)
     )
     return in_layer, factors_layer, bias
 
 
-
 class CollaborativeFilteringModel():
-    # IDEA - have it output its confidence and punish for lack of confidence,
-    # but punish less if it predicted wrong, but had little confidence
-
     _default_compile_parameters = {
         'optimizer': optimizers.Adam(),
-        'loss': 'mean_squared_error',
-        'loss_weights': [1, 0.1],
-        'metrics': ['mean_absolute_error', acceptable_absolute_deviation],
+        'loss': {
+            'highest': 'categorical_crossentropy',
+            'values': 'mean_squared_error',
+        },
+        'loss_weights': {'highest': 1, 'values': 0.001},
+        'metrics': {
+            'highest': 'categorical_accuracy',
+            'values': ['mean_absolute_error', acceptable_absolute_deviation],
+        },
     }
+
+    _default_callbacks = [
+        ModelCheckpoint(KERAS_MODELS_FORMATTING),
+        TerminateOnNaN(),
+        EarlyStopping(monitor='loss', patience=3),
+    ]
 
     def __getattr__(self, *args, **kwds):
         return self.model.__getattribute__(*args, **kwds)
@@ -118,12 +138,14 @@ class CollaborativeFilteringModel():
         user_in, user_preferences, user_bias = _create_starting_layers(
             num_users,
             num_item_features,
+            1,
             'user',
             l2(USER_REGULARIZATION_CONSTANT)
         )
         item_in, item_factors, item_bias = _create_starting_layers(
             num_items,
             num_item_features,
+            2,
             'item',
             l2(ITEM_REGULARIZATION_CONSTANT)
         )
@@ -131,6 +153,7 @@ class CollaborativeFilteringModel():
         simple_dot = dot([user_preferences, item_factors], axes=-1)
         simple_dot = add([simple_dot, user_bias, item_bias])
         simple_dot = Flatten()(simple_dot)
+        aux_x = Dense(num_neurons, activation='relu', use_bias=True)(simple_dot)
 
         x = concatenate([
             Flatten()(user_preferences), user_bias,
@@ -141,13 +164,14 @@ class CollaborativeFilteringModel():
         x = Dense(num_neurons, activation='relu', use_bias=True)(x)
         x = Dropout(dropout_chance)(x)
         x = Dense(num_neurons, activation=None, use_bias=True)(x)
-        x = add([x, simple_dot])
+        x = add([x, aux_x])
         x = Dense(num_neurons, activation='relu', use_bias=True)(x)
         x = Dense(num_neurons, activation='relu', use_bias=True)(x)
         x = Dropout(dropout_chance)(x)
-        x = Dense(1, activation=None, name='output')(x)
+        values = Dense(2, activation=None, name='values')(x)
+        highest = Dense(2, activation='softmax', name='highest')(x)
 
-        self.model = Model([item_in, user_in], [x, simple_dot])
+        self.model = Model([item_in, user_in], [highest, values])
 
     def compile(self, **kwds):
         options = self._default_compile_parameters.copy()
@@ -160,15 +184,10 @@ class CollaborativeFilteringModel():
             batch_size=BATCH_SIZE,
             epochs=100,
             verbose=0,
-            callbacks=None,
             validation_split=0.1,
             **kwds
     ):
-        if callbacks is None:
-            callbacks = []
-            callbacks.append(ModelCheckpoint(KERAS_MODELS_FORMATTING))
-            callbacks.append(TerminateOnNaN())
-            callbacks.append(EarlyStopping(monitor='loss', patience=3))
+        callbacks = kwds.pop('callbacks', self._default_callbacks)
         return self.model.fit(
             x, y,
             batch_size=batch_size,
@@ -176,6 +195,31 @@ class CollaborativeFilteringModel():
             verbose=verbose,
             callbacks=callbacks,
             validation_split=validation_split,
+            **kwds
+        )
+
+    def fit_generator(self, epochs=100, verbose=0, **kwds):
+        """A thin wrapper around keras.Model.fit_generator"""
+        callbacks = kwds.pop('callbacks', self._default_callbacks)
+        return self.model.fit_generator(
+            epochs=epochs,
+            verbose=verbose,
+            callbacks=callbacks,
+            workers=4,
+            use_multiprocessing=True,
+            **kwds,
+        )
+
+    def train(self, ratings_df, games_id, validation_split=0.1, **kwds):
+        n_samples = ratings_df.shape[0]
+        cutoff = int(-n_samples * validation_split)
+        validation_df = ratings_df.iloc[cutoff:]
+        training_df = ratings_df.iloc[:cutoff]
+        training_generator = dp.BatchGenerator(training_df, games_id)
+        validation_generator = dp.BatchGenerator(validation_df, games_id)
+        return self.fit_generator(
+            generator=training_generator,
+            validation_data = validation_generator,
             **kwds
         )
 

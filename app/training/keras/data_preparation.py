@@ -1,4 +1,5 @@
 from django.db.models import Count
+from keras.utils import Sequence, to_categorical
 import numpy as np
 import pandas as pd
 
@@ -7,6 +8,7 @@ from training.keras.utils.constants import (
     MIN_RATINGS_FOR_TRAINING,
 )
 from training.models import TrainedOnGame, TrainedOnPlayer
+from training.keras.utils.constants import BATCH_SIZE
 
 def _filter_by_sufficient_no_ratings(df):
     def _filter(key):
@@ -53,6 +55,57 @@ def to_keras_model_indices(df, rebuild_indices=False):
     df = _to_trained_on(df, 'game_id', TrainedOnGame, rebuild=rebuild_indices)
     df = _to_trained_on(df, 'player_id', TrainedOnPlayer, rebuild=rebuild_indices)
     return df
+
+
+class BatchGenerator(Sequence):
+    def __init__(
+        self,
+        ratings_df,
+        games_id,
+        batch_size=BATCH_SIZE,
+        unplayed_split=0,
+        shuffle=True
+    ):
+        self.ratings_df = ratings_df
+        self.ratings_by_player = ratings_df.groupby('player_id')
+        self.games_id = games_id
+        self.batch_size = batch_size
+        if not shuffle:
+            raise RuntimeError('Values will be shuffled.')
+        self.shuffle = shuffle
+        self.on_epoch_end()
+
+    def __data_generation(self, temp_indexes):
+        temp_ratings = self.original.iloc[temp_indexes]
+        players_id = temp_ratings.player_id
+        second_games = self.comparison.iloc[temp_indexes]
+        games_id = np.column_stack((temp_ratings.game_id, second_games.game_id))
+        values = np.column_stack((temp_ratings.value, second_games.value))
+        highest = to_categorical(values.argmax(axis=-1), num_classes=2)
+        inputs = {'user_in': players_id, 'item_in': games_id}
+        outputs = {'values': values, 'highest': highest}
+        return inputs, outputs
+
+    def __getitem__(self, index):
+        indexes = np.arange(self.batch_size) + self.batch_size * index
+        inputs, outputs = self.__data_generation(self.indexes[indexes])
+        return inputs, outputs
+
+    def __len__(self):
+        """Number of batches per epoch."""
+        return int(np.floor(self.ratings_df.shape[0] / self.batch_size))
+
+    def on_epoch_end(self):
+        """Updates indexes after after each epoch."""
+        def shuffle_by_player():
+            df = self.ratings_player.apply(lambda x: x.sample(frac=1))
+            return df.reset_index(drop=True)
+        self.original = shuffle_by_player()
+        self.comparison = shuffle_by_player()
+        self.indexes = np.arange(self.ratings_df.shape[0])
+        if self.shuffle:
+            np.random.shuffle(self.indexes)
+
 
 # =============================================================================
 # From data keras works on to data db works on ================================

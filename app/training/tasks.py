@@ -25,12 +25,9 @@ def train_everything(rebuild_indices=True):
         NUM_ITEM_FEATURES,
     )
     model.compile()
-    _history = model.fit(
-        {
-            'user_in': ratings.player_id.values,
-            'item_in': ratings.game_id.values,
-        },
-        [ratings.value.values, ratings.value.values],
+    _history = model.train(
+        ratings,
+        ratings.game_id.unique(),
         verbose=1,
     )
 
