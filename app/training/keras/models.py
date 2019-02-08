@@ -202,7 +202,8 @@ class CollaborativeFilteringModel():
             verbose=verbose,
             callbacks=callbacks,
             workers=4,
-            use_multiprocessing=True,
+            #AssertionError: daemonic processes are not allowed to have children
+            use_multiprocessing=False,
             **kwds,
         )
 
