@@ -57,9 +57,9 @@ def get_player_predictions(model_id, games_id, limit):
             'user_in': player_indice,
             'item_in': np.array((a, b)).reshape(-1, 2),
         }
-        values, highest = model.keras_model.predict(inputs)
+        highest, _ = model.keras_model.predict(inputs)
         highest = np.squeeze(highest)
-        return highest[0] - highest[1]
+        return highest[1] - highest[0]
 
     model = KerasSinglePlayerModel.objects.get(id=model_id)
     to_be_pred = pd.DataFrame(games_id, columns=['game_id'])
