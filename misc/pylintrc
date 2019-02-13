@@ -301,6 +301,9 @@ good-names=i,
            x,
            it,
            qs,
+           df,
+           urlpatterns,
+           app_name,
            _
 
 # Include a hint for the correct naming format with invalid-name.
