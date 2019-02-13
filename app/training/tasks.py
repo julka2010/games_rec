@@ -48,6 +48,7 @@ def train_player(player_id):
         TrainedOnGame.objects.all().values_list('pk', flat=True),
         verbose=2,
     )
+    return player_id
 
 
 @shared_task
@@ -78,5 +79,4 @@ def get_player_predictions(model_id, games_id, limit):
         to_be_pred.game_id,
         key=cmp_to_key(_compare_two_games),
     )[:limit], columns=['model_game_id'])
-    logging.error(recommendations)
     return dp.to_pks(recommendations).to_json()

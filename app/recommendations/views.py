@@ -10,7 +10,8 @@ import pandas as pd
 from ratings.forms import PlayerSearchForm
 from ratings.models import Game, Player
 from training.models import KerasSinglePlayerModel
-from training.tasks import train_player, get_player_predictions
+from training.tasks import train_player
+from .tasks import get_player_recommendations
 
 def build_url(viewname, kwargs):
     """django.urls.reverse + request.get parameters.
@@ -40,7 +41,10 @@ def index(request):
                 Player,
                 bgg_username=form.cleaned_data['search_query']
             )
-            task_id = train_player.delay(player.id).id
+            task_id = chain(
+                train_player.s(player.id),
+                get_player_recommendations.s()
+            ).apply_async().id
             url = build_url(
                 'recommendations:player-recommendations',
                 kwargs={
@@ -56,23 +60,25 @@ def index(request):
 
 def recommendations(request, player_id=None):
     task_id = request.GET.get('task_id', None)
-    ended = AsyncResult(task_id).ready() if task_id else True
-    if not ended:
+    if not task_id:
+        task_id = get_player_recommendations.delay(player_id).id
+        url = build_url(
+            'recommendations:player-recommendations',
+            kwargs={
+                'player_id': player_id,
+                'get': {'task_id': task_id},
+            }
+        )
+        return HttpResponseRedirect(url)
+
+    res = AsyncResult(task_id)
+    if not res.ready():
         return HttpResponse(
             "Recommendations are not ready yet.\n"
             "Please check in about 30 secs."
         )
-    if player_id:
-        model = get_list_or_404(KerasSinglePlayerModel, player_id=player_id)[-1]
-    else:
-        raise RuntimeError(
-            'Personal recommendations should always get model_id or player_id')
-    player = Player.objects.get(pk=player_id)
-    unplayed_games = player.unplayed_games.standalone_games(
-        ).filter(ratings_count__gte=100
-        ).to_dataframe('id').reset_index(drop=True).id
-    recs = model.get_recommendations(unplayed_games)
+
+    recs = pd.read_json(res.result)
     titles = Game.objects.get_by_pks(recs.pk).to_dataframe(['bgg_id', 'title'])
-    logging.error(titles)
     context = {'recommendation_list' : titles}
     return render(request, 'recommendations/recommendation_list.html', context)

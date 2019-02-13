@@ -143,4 +143,7 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_RESULT_BACKEND = 'django-db'
-CELERY_TASK_ROUTES = {'training.tasks.*': {'queue': 'gpu-bound'}}
+CELERY_TASK_ROUTES = {
+    'training.tasks.*': {'queue': 'gpu-bound'},
+    'recommendations.tasks.*': {'queue': 'gpu-bound'}
+}

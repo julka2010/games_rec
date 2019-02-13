@@ -42,11 +42,3 @@ class KerasSinglePlayerModel(models.Model):
                 'acceptable_absolute_deviation': acceptable_absolute_deviation,
             }
         )
-
-    def get_recommendations(self, games_id, limit=100):
-        from training.tasks import get_player_predictions
-        recommendations = get_player_predictions.delay(
-            self.id, list(games_id), limit  # pylint: disable=no-member
-        )
-        recommendations = recommendations.wait(interval=1)
-        return pd.read_json(recommendations)
