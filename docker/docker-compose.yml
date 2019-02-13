@@ -26,7 +26,9 @@ services:
       - psql
 
   gpu-worker:
-    image: *app
+    build:
+      dockerfile: './docker/gpu-worker/Dockerfile'
+      context: '.'
     command: ["celery", "worker", "-A", "game_recommendations", "-Q", "gpu-bound", "--concurrency=1", "--loglevel=INFO"]
     env_file:
       - .env
